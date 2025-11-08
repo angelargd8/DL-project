@@ -9,6 +9,8 @@ public class EmojiRecognition : MonoBehaviour
 
     private Worker worker;
 
+    public float[] results;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -27,13 +29,19 @@ public class EmojiRecognition : MonoBehaviour
     }
 
     //run the model
-    public void runAI()
+    public void runAI(Texture2D picture)
     {
+        //running the worker with a tensor
+        using Tensor<float> inputTensor = TextureConverter.ToTensor(picture, 64, 64, 1);
+        worker.Schedule(inputTensor);
+        Tensor<float> outputTensor = worker.PeekOutput() as Tensor<float>;
+        results = outputTensor.DownloadToArray();
 
     }
 
+    //clean everything on disable
     private void OnDisable()
     {
-        
+        worker.Dispose();
     }
 }
