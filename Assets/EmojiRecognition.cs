@@ -1,45 +1,73 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Sentis;
+using UnityEngine;
 
 public class EmojiRecognition : MonoBehaviour
 {
+    //Imagen que se usará como entrada de prueba del model
+    public Texture2D testPicture; 
+
+    //Es el modelo de IA exportado
     public ModelAsset modelAsset;
 
+    //Es el objeto encargado de ejecutar el modelo en GPU o CPU
     private Worker worker;
 
-    public float[] results;
+    //Guarda los valores numéricos de probabilidad de cada clase
+    //[SerializeField] permite verlo en el Inspector aunque sea private
+    [SerializeField] private float[] results; 
 
-    // Start is called before the first frame update
+    string[] classNames = { "confundido", "enojado", "feliz", "muerto", "neutral", "sorprendida", "triste" };
+
+
     void Start()
     {
         // init IA
         Model model = ModelLoader.Load(modelAsset);
+        worker = new Worker(model, BackendType.GPUCompute);
 
-        //graph 
-        FunctionalGraph graph = new FunctionalGraph();
-        FunctionalTensor[] inputs = graph.AddInputs(model);
-        FunctionalTensor[] outputs = Functional.Forward(model, inputs);
-
-        Model runtimeModel = graph.Compile(outputs);
-        worker = new Worker(runtimeModel, BackendType.GPUCompute);
-
-
+        RunAI(testPicture);
     }
 
     //run the model
-    public void runAI(Texture2D picture)
+    public void RunAI(Texture2D picture)
     {
+        //crear una transformacion que se ajusta a la imagen
+        var transform = new TextureTransform()
+            .SetDimensions(64, 64, 3) //64x64 pixeles y 3 canales RGB
+            .SetTensorLayout(TensorLayout.NHWC); //formato NHWC (batch, height, width, channels)
+
+        //Convierte la imagen Texture2D en un tensor de floats normalizado (0 a 1)
+        using Tensor<float> inputTensor = TextureConverter.ToTensor(picture, transform);
+
+        //Asigna el tensor de entrada al modelo
+        worker.SetInput("input", inputTensor);
+
+        //lanza la ejecución asíncrona del modelo en la GPU.
+        worker.Schedule();
+
         //running the worker with a tensor
-        using Tensor<float> inputTensor = TextureConverter.ToTensor(picture, 64, 64, 1);
-        worker.Schedule(inputTensor);
-        Tensor<float> outputTensor = worker.PeekOutput() as Tensor<float>;
+        //Recupera el tensor de salida del modelo (vector con las probabilidades de cada clase).
+        Tensor<float> outputTensor = worker.PeekOutput("keras_tensor_153") as Tensor<float>;
+        //guardar los resultados del tensor en el array
         results = outputTensor.DownloadToArray();
 
+        // mostrar la probabilidad de cada clase
+        for (int i = 0; i < results.Length; i++)
+            Debug.Log($"Clase {i}: {results[i]}");
+
+        //busca el indice con el valor maximo de probabilidad
+        int predictedIndex = System.Array.IndexOf(results, Mathf.Max(results));
+        Debug.Log($"Predicción: {classNames[predictedIndex]} (Confianza: {results[predictedIndex]:F2})");
+
+        // forzar refresco visual en el inspector
+        #if UNITY_EDITOR
+                UnityEditor.EditorUtility.SetDirty(this);
+        #endif
     }
 
-    //clean everything on disable
+    //clean everything on disable, libera los recursos del worker
     private void OnDisable()
     {
         worker.Dispose();
