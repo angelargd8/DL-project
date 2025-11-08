@@ -76,6 +76,7 @@
     <Compile Include="Assets\PassthroughCameraApiSamples\MultiObjectDetection\SentisInference\Scripts\SentisInferenceRunManager.cs" />
     <Compile Include="Assets\PassthroughCameraApiSamples\BrightnessEstimation\Scripts\BrightnessEstimationDebugger.cs" />
     <Compile Include="Assets\PassthroughCameraApiSamples\StartScene\Scripts\HandedInputSelector.cs" />
+    <Compile Include="Assets\EmojiRecognition.cs" />
     <Compile Include="Assets\PassthroughCameraApiSamples\CameraToWorld\Scripts\CameraToWorldCameraCanvas.cs" />
     <Compile Include="Assets\PassthroughCameraApiSamples\StartScene\Scripts\StartMenu.cs" />
     <Compile Include="Assets\PassthroughCameraApiSamples\StartScene\Scripts\ReturnToStartScene.cs" />
