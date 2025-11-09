@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class EmojiRecognition : MonoBehaviour
 {
+    //confianza minima
+    public float threshhold = 0.9f; 
+
     //Imagen que se usará como entrada de prueba del model
     public Texture2D testPicture; 
 
@@ -27,11 +30,14 @@ public class EmojiRecognition : MonoBehaviour
         Model model = ModelLoader.Load(modelAsset);
         worker = new Worker(model, BackendType.GPUCompute);
 
-        RunAI(testPicture);
+        Debug.Log(RunAI(testPicture));
     }
 
+
+
+
     //run the model
-    public void RunAI(Texture2D picture)
+    public int RunAI(Texture2D picture)
     {
         //crear una transformacion que se ajusta a la imagen
         var transform = new TextureTransform()
@@ -65,6 +71,8 @@ public class EmojiRecognition : MonoBehaviour
         #if UNITY_EDITOR
                 UnityEditor.EditorUtility.SetDirty(this);
         #endif
+
+        return GetMaxIndex(results);
     }
 
     //clean everything on disable, libera los recursos del worker
@@ -72,4 +80,30 @@ public class EmojiRecognition : MonoBehaviour
     {
         worker.Dispose();
     }
+
+    // condición de confianza mínima
+    public int GetMaxIndex(float[] array)
+    {
+        int maxIndex = 0;
+        for (int i=0; i<array.Length; i++)
+        {
+            if (array[i] > array[maxIndex])
+            {
+                maxIndex = i;
+            }
+        }
+
+        if (array[maxIndex]> threshhold)
+        {
+            Debug.Log($"Predicción aceptada: {classNames[maxIndex]} ({array[maxIndex]:F2})");
+            return maxIndex;
+        }
+        else
+        {
+            Debug.Log($"Predicción incierta (Confianza: {array[maxIndex]:F2}) — sin clase asignada.");
+            return -1;
+        }
+    }
+
+
 }
