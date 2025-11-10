@@ -5,11 +5,12 @@ using UnityEngine;
 
 public class EmojiRecognition : MonoBehaviour
 {
+    [Header("Configuración del modelo")]
     //confianza minima
-    public float threshhold = 0.9f; 
+    public float threshhold = 0.9f;
 
     //Imagen que se usará como entrada de prueba del model
-    public Texture2D testPicture; 
+    public Texture2D testPicture;
 
     //Es el modelo de IA exportado
     public ModelAsset modelAsset;
@@ -19,7 +20,7 @@ public class EmojiRecognition : MonoBehaviour
 
     //Guarda los valores numéricos de probabilidad de cada clase
     //[SerializeField] permite verlo en el Inspector aunque sea private
-    [SerializeField] private float[] results; 
+    [SerializeField] private float[] results;
 
     string[] classNames = { "confundido", "enojado", "feliz", "muerto", "neutral", "sorprendida", "triste" };
 
@@ -30,7 +31,7 @@ public class EmojiRecognition : MonoBehaviour
         Model model = ModelLoader.Load(modelAsset);
         worker = new Worker(model, BackendType.GPUCompute);
 
-        Debug.Log(RunAI(testPicture));
+        // Debug.Log(RunAI(testPicture));
     }
 
 
@@ -68,24 +69,52 @@ public class EmojiRecognition : MonoBehaviour
         Debug.Log($"Predicción: {classNames[predictedIndex]} (Confianza: {results[predictedIndex]:F2})");
 
         // forzar refresco visual en el inspector
-        #if UNITY_EDITOR
-                UnityEditor.EditorUtility.SetDirty(this);
-        #endif
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
 
         return GetMaxIndex(results);
     }
 
-    //clean everything on disable, libera los recursos del worker
-    private void OnDisable()
-    {
-        worker.Dispose();
-    }
 
+    // Llamado por FingerDrawing al terminar un trazo
+    public string ExecuteModel(Texture2D picture)
+    {
+        // Ajustar imagen a tamaño de entrada del modelo
+        var transform = new TextureTransform()
+            .SetDimensions(64, 64, 3)
+            .SetTensorLayout(TensorLayout.NHWC);
+
+        // Convertir imagen a tensor
+        using Tensor<float> inputTensor = TextureConverter.ToTensor(picture, transform);
+
+        // Ejecutar modelo
+        worker.SetInput("input", inputTensor);
+        worker.Schedule();
+
+        using Tensor<float> outputTensor = worker.PeekOutput("keras_tensor_153") as Tensor<float>;
+        results = outputTensor.DownloadToArray();
+
+        // Obtener la clase con mayor probabilidad
+        int maxIndex = GetMaxIndex(results);
+
+        if (maxIndex >= 0)
+        {
+            Debug.Log($"Emoji predicho: {classNames[maxIndex]} (Confianza: {results[maxIndex]:F2})");
+            return classNames[maxIndex];
+        }
+        else
+        {
+            Debug.Log($"Predicción incierta (Confianza: {Mathf.Max(results):F2})");
+            return "incierto";
+        }
+    }
+    
     // condición de confianza mínima
     public int GetMaxIndex(float[] array)
     {
         int maxIndex = 0;
-        for (int i=0; i<array.Length; i++)
+        for (int i = 0; i < array.Length; i++)
         {
             if (array[i] > array[maxIndex])
             {
@@ -93,7 +122,7 @@ public class EmojiRecognition : MonoBehaviour
             }
         }
 
-        if (array[maxIndex]> threshhold)
+        if (array[maxIndex] > threshhold)
         {
             Debug.Log($"Predicción aceptada: {classNames[maxIndex]} ({array[maxIndex]:F2})");
             return maxIndex;
@@ -103,6 +132,12 @@ public class EmojiRecognition : MonoBehaviour
             Debug.Log($"Predicción incierta (Confianza: {array[maxIndex]:F2}) — sin clase asignada.");
             return -1;
         }
+    }
+
+    //clean everything on disable, libera los recursos del worker
+    private void OnDisable()
+    {
+        worker.Dispose();
     }
 
 
