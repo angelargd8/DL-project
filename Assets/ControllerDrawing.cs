@@ -216,7 +216,7 @@ public class ControllerDrawing : MonoBehaviour
         }
     }
 
-    // Borra automáticamente cada 20 segundos
+    // Borra automáticamente cada 20 segundosss
     private IEnumerator AutoClearEvery20Seconds()
     {
         while (true)

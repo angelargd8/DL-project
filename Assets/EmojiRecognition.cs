@@ -49,7 +49,7 @@ public class EmojiRecognition : MonoBehaviour
         return inverted;
     }
 
-    // Ejecuta el modelo directamente (versión de prueba)
+    // Ejecuta el modelo directamente
     public int RunAI(Texture2D picture)
     {
         // Invertir colores antes de enviarlo al modelo
@@ -61,7 +61,9 @@ public class EmojiRecognition : MonoBehaviour
             .SetTensorLayout(TensorLayout.NHWC);
 
         // Convertir a tensor
+        //using Tensor<float> inputTensor = TextureConverter.ToTensor(picture, transform);
         using Tensor<float> inputTensor = TextureConverter.ToTensor(inverted, transform);
+
 
         worker.SetInput("input", inputTensor);
         worker.Schedule();

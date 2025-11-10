@@ -2301,7 +2301,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb2d7dc5b43331e49bf422f244f29e40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetImage: {fileID: 339551999}
 --- !u!1 &354364730
 GameObject:
   m_ObjectHideFlags: 0
@@ -10601,16 +10600,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08a98906bccd5db46a79cf291a484c37, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  displayImage: {fileID: 339551999}
-  classifier: {fileID: 0}
-  fingerTipMarkerTransform: {fileID: 0}
-  delayToSend: 1
-  distanceToCanvas: 0.01
-  hasDrawn: 0
-  lastDrawnTime: 0
-  drawCamera: {fileID: 0}
-  drawingTexture: {fileID: 0}
-  rootCanvas: {fileID: 0}
 --- !u!1 &1941036488
 GameObject:
   m_ObjectHideFlags: 0
